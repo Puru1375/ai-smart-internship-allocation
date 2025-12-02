@@ -1,190 +1,66 @@
-// frontend/src/pages/CompanyDashboard.jsx
-import React, { useState, useEffect } from "react";
-import API from "../api";
-import { useNavigate } from "react-router-dom";
+import React, { useState, useEffect } from 'react';
+import API from '../api';
 
 const CompanyDashboard = () => {
   const [jobs, setJobs] = useState([]);
-  const navigate = useNavigate();
+  const [formData, setFormData] = useState({ title: '', description: '', skills: '', capacity: 1, location: 'Remote' });
 
-  // Form State
-  const [formData, setFormData] = useState({
-    title: "",
-    description: "",
-    skills: "", // input as string "Python, SQL"
-    capacity: 1,
-    location: "Remote",
-  });
+  useEffect(() => { fetchJobs(); }, []);
+  const fetchJobs = async () => { try { const res = await API.get('/internships/my-internships'); setJobs(res.data); } catch (e) {} };
 
-  // Load existing jobs on startup
-  useEffect(() => {
-    fetchJobs();
-  }, []);
-
-  const fetchJobs = async () => {
-    try {
-      // UPDATED URL HERE
-      const res = await API.get("/internships/my-internships");
-      setJobs(res.data);
-    } catch (err) {
-      console.error("Failed to load jobs");
-    }
-  };
-  const handleLogout = () => {
-    localStorage.clear();
-    navigate("/");
-  };
-
-  const handleChange = (e) => {
-    setFormData({ ...formData, [e.target.name]: e.target.value });
-  };
-
+  const handleChange = (e) => setFormData({ ...formData, [e.target.name]: e.target.value });
   const handleSubmit = async (e) => {
     e.preventDefault();
-    try {
-      await API.post("/internships", formData);
-      alert("Internship Posted!");
-      setFormData({
-        title: "",
-        description: "",
-        skills: "",
-        capacity: 1,
-        location: "Remote",
-      }); // Reset form
-      fetchJobs(); // Refresh list
-    } catch (err) {
-      alert("Failed to post job");
-    }
+    try { await API.post('/internships', formData); alert('Posted!'); setFormData({ title: '', description: '', skills: '', capacity: 1, location: 'Remote' }); fetchJobs(); } catch (e) { alert('Error'); }
   };
 
   return (
-    <div style={{ padding: "40px", maxWidth: "1000px", margin: "auto" }}>
-      <header
-        style={{
-          display: "flex",
-          justifyContent: "space-between",
-          alignItems: "center",
-        }}
-      >
-        <h2>🏢 Company Dashboard</h2>
-        <button
-          onClick={handleLogout}
-          style={{
-            background: "red",
-            color: "white",
-            border: "none",
-            padding: "5px 10px",
-          }}
-        >
-          Logout
-        </button>
-      </header>
-
-      <div
-        style={{
-          display: "grid",
-          gridTemplateColumns: "1fr 1fr",
-          gap: "20px",
-          marginTop: "20px",
-        }}
-      >
-        {/* LEFT: Post New Job */}
-        <div
-          style={{
-            padding: "20px",
-            border: "1px solid #ddd",
-            borderRadius: "8px",
-          }}
-        >
-          <h3>Post New Internship</h3>
-          <form onSubmit={handleSubmit}>
-            <div style={{ marginBottom: "10px" }}>
-              <label>Job Title</label>
-              <input
-                name="title"
-                value={formData.title}
-                onChange={handleChange}
-                required
-                style={{ width: "100%" }}
-              />
+    <div className="container mx-auto px-6 py-10">
+      <h2 className="text-3xl font-bold text-gray-800 mb-8">🏢 Industry Partner Dashboard</h2>
+      
+      <div className="grid lg:grid-cols-3 gap-8">
+        {/* Post Job Form */}
+        <div className="lg:col-span-1 bg-white p-6 rounded-xl shadow-lg border-t-4 border-gov-orange h-fit">
+          <h3 className="text-xl font-bold text-gov-orange mb-6 border-b pb-2">Post New Requirement</h3>
+          <form onSubmit={handleSubmit} className="space-y-4">
+            <div>
+              <label className="text-sm font-semibold text-gray-700">Role Title</label>
+              <input name="title" value={formData.title} onChange={handleChange} className="w-full border p-2 rounded focus:ring-2 focus:ring-orange-200 outline-none" placeholder="e.g. Python Intern" required />
             </div>
-            <div style={{ marginBottom: "10px" }}>
-              <label>Required Skills (comma separated)</label>
-              <input
-                name="skills"
-                value={formData.skills}
-                onChange={handleChange}
-                placeholder="e.g. Python, React, AWS"
-                required
-                style={{ width: "100%" }}
-              />
+            <div>
+              <label className="text-sm font-semibold text-gray-700">Required Skills</label>
+              <input name="skills" value={formData.skills} onChange={handleChange} className="w-full border p-2 rounded focus:ring-2 focus:ring-orange-200 outline-none" placeholder="Python, SQL (Comma separated)" required />
             </div>
-            <div style={{ marginBottom: "10px" }}>
-              <label>Capacity (Number of Interns)</label>
-              <input
-                type="number"
-                name="capacity"
-                value={formData.capacity}
-                onChange={handleChange}
-                required
-                style={{ width: "100%" }}
-              />
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className="text-sm font-semibold text-gray-700">Capacity</label>
+                <input type="number" name="capacity" value={formData.capacity} onChange={handleChange} className="w-full border p-2 rounded focus:ring-2 focus:ring-orange-200 outline-none" required />
+              </div>
+              <div>
+                <label className="text-sm font-semibold text-gray-700">Location</label>
+                <input name="location" value={formData.location} onChange={handleChange} className="w-full border p-2 rounded focus:ring-2 focus:ring-orange-200 outline-none" required />
+              </div>
             </div>
-            <div style={{ marginBottom: "10px" }}>
-              <label>Location</label>
-              <input
-                name="location"
-                value={formData.location}
-                onChange={handleChange}
-                required
-                style={{ width: "100%" }}
-              />
-            </div>
-            <button
-              type="submit"
-              style={{
-                width: "100%",
-                background: "#007bff",
-                color: "white",
-                padding: "10px",
-                border: "none",
-              }}
-            >
-              Post Internship
-            </button>
+            <button type="submit" className="w-full bg-gov-orange text-white py-2 rounded font-bold hover:bg-orange-600 transition shadow">Post Opportunity</button>
           </form>
         </div>
 
-        {/* RIGHT: List of Posted Jobs */}
-        <div>
-          <h3>Your Active Postings</h3>
-          {jobs.length === 0 ? (
-            <p>No jobs posted yet.</p>
-          ) : (
-            <div style={{ maxHeight: "400px", overflowY: "auto" }}>
+        {/* Job List */}
+        <div className="lg:col-span-2">
+          <h3 className="text-xl font-bold text-gray-700 mb-4">Active Listings</h3>
+          {jobs.length === 0 ? <p className="text-gray-500 italic">No active listings.</p> : (
+            <div className="grid md:grid-cols-2 gap-4">
               {jobs.map((job) => (
-                <div
-                  key={job.id}
-                  style={{
-                    border: "1px solid #eee",
-                    padding: "10px",
-                    marginBottom: "10px",
-                    background: "#f9f9f9", // Light background
-                    color: "#333", // <--- ADD THIS: Forces text to be Dark Grey
-                  }}
-                >
-                  <h4 style={{ margin: "0 0 5px 0" }}>{job.title}</h4>
-
-                  <p style={{ margin: "5px 0" }}>
-                    <strong>Skills:</strong>{" "}
-                    {Array.isArray(job.required_skills)
-                      ? job.required_skills.join(", ")
-                      : "No skills listed"}
-                  </p>
-
-                  <p style={{ margin: "5px 0" }}>
-                    <strong>Capacity:</strong> {job.capacity} students
-                  </p>
+                <div key={job.id} className="bg-white p-6 rounded-lg shadow-md border-l-4 border-gov-blue hover:shadow-xl transition">
+                  <h4 className="font-bold text-lg text-gov-blue">{job.title}</h4>
+                  <p className="text-xs text-gray-400 mb-3">{new Date().toLocaleDateString()}</p>
+                  <div className="space-y-2 text-sm text-gray-600">
+                    <p><strong>Skills:</strong> {Array.isArray(job.required_skills) ? job.required_skills.join(', ') : job.required_skills}</p>
+                    <div className="flex justify-between items-center mt-4">
+                      <span className="bg-gray-100 px-2 py-1 rounded">📍 {job.location}</span>
+                      <span className="bg-blue-100 text-blue-800 px-2 py-1 rounded font-bold">Slots: {job.capacity}</span>
+                    </div>
+                  </div>
                 </div>
               ))}
             </div>

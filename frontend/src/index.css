@@ -1,1 +1,33 @@
 @import "tailwindcss";
+
+@theme {
+  /* Define Government Colors here for v4 */
+  --color-gov-orange: #FF9933;
+  --color-gov-white: #FFFFFF;
+  --color-gov-green: #138808;
+  --color-gov-blue: #003366;  /* Deep Navy Blue */
+  --color-gov-light: #f1f1f1;
+  --color-gov-accent: #0056b3;
+  
+  /* Define Font */
+  --font-sans: 'Inter', sans-serif;
+}
+
+/* Import Font */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+
+/* Apply Defaults */
+body {
+  background-color: var(--color-gov-light); /* Uses the var defined above */
+  color: #333;
+  font-family: var(--font-sans);
+}
+
+/* Custom Scrollbar */
+::-webkit-scrollbar {
+  width: 8px;
+}
+::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 4px;
+}
