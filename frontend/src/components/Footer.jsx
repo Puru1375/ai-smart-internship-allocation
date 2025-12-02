@@ -12,7 +12,7 @@ const Footer = () => {
           </p>
         </div>
         <div>
-          <h4 className="font-bold mb-3">Quick Links</h4>
+          <h4 className="font-bold mb-3 text-gray-500">Quick Links</h4>
           <ul className="space-y-2 text-gray-400">
             <li><a href="#" className="hover:text-white">Ministry of Education</a></li>
             <li><a href="#" className="hover:text-white">AICTE Portal</a></li>
@@ -20,7 +20,7 @@ const Footer = () => {
           </ul>
         </div>
         <div>
-          <h4 className="font-bold mb-3">Support</h4>
+          <h4 className="font-bold mb-3 text-gray-500">Support</h4>
           <ul className="space-y-2 text-gray-400">
             <li>User Manual</li>
             <li>FAQs</li>
@@ -28,7 +28,7 @@ const Footer = () => {
           </ul>
         </div>
         <div>
-          <h4 className="font-bold mb-3">Contact</h4>
+          <h4 className="font-bold mb-3 text-gray-500">Contact</h4>
           <p className="text-gray-400">New Delhi, India</p>
           <p className="text-gray-400">Email: helpdesk@sih.gov.in</p>
           <p className="text-gray-400">Toll Free: 1800-111-222</p>

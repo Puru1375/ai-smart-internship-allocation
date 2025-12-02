@@ -1,7 +1,7 @@
 # ai-engine/main.py
 from fastapi import FastAPI, UploadFile, File, HTTPException
 from pydantic import BaseModel
-from typing import List
+from typing import List, Optional
 from pdfminer.high_level import extract_text
 from ortools.linear_solver import pywraplp
 import io
@@ -10,23 +10,32 @@ from skills_db import SKILL_DB
 
 app = FastAPI()
 
-# --- DATA MODELS ---
-class Student(BaseModel):
-    id: int
-    skills: List[str]
-    category: str  # e.g., "General", "OBC", "SC", "ST"
+# --- DATA MODELS (Must match Node.js payload exactly) ---
 
 class Internship(BaseModel):
     id: int
     required_skills: List[str]
     capacity: int
+    location: Optional[str] = "" # Handle optional location
+
+class Student(BaseModel):
+    id: int
+    skills: List[str]
+    category: str
+    district: Optional[str] = ""
+    prefer_local: bool = False
 
 class OptimizationRequest(BaseModel):
     students: List[Student]
     internships: List[Internship]
-    min_category_quota: float = 0.0 # e.g., 0.2 means 20% must be reserved categories
+    min_category_quota: float = 0.0
+
+class GapRequest(BaseModel):
+    student_skills: List[str]
+    internships: List[Internship]
 
 # --- HELPER FUNCTIONS ---
+
 def clean_text(text):
     text = text.lower()
     text = re.sub(r'[^a-z0-9]', ' ', text)
@@ -45,16 +54,19 @@ def extract_skills_from_text(text):
              found_skills.add(skill)
     return list(found_skills)
 
-def calculate_score(student_skills, job_skills):
-    if not job_skills: return 0
+def analyze_match(student_skills, job_skills):
+    if not job_skills: return 0, []
     s_skills = set([s.lower() for s in student_skills])
     j_skills = set([s.lower() for s in job_skills])
     intersection = s_skills.intersection(j_skills)
     union = s_skills.union(j_skills)
-    if len(union) == 0: return 0
-    return (len(intersection) / len(union)) * 100
+    score = 0
+    if len(union) > 0:
+        score = (len(intersection) / len(union)) * 100
+    return score, list(intersection)
 
 # --- ROUTES ---
+
 @app.get("/")
 def home():
     return {"message": "AI Engine is Running!"}
@@ -80,17 +92,22 @@ def optimize_allocations(data: OptimizationRequest):
     solver = pywraplp.Solver.CreateSolver('SCIP')
     if not solver: return {"error": "Solver not found"}
 
-    # Variables
     x = {}
     costs = {}
-    
-    # Identify reserved category students (Assuming anything not 'General' is reserved)
-    reserved_students = [s.id for s in students if s.category and s.category.lower() != 'general']
-    
+    match_details = {}
+
     for s in students:
         for i in internships:
-            score = calculate_score(s.skills, i.required_skills)
+            score, reasons = analyze_match(s.skills, i.required_skills)
+            
+            # Location Preference Constraint
+            # If student prefers local and districts don't match, zero out the score
+            if s.prefer_local and s.district and i.location:
+                if s.district.lower() not in i.location.lower():
+                    score = 0
+
             costs[(s.id, i.id)] = score
+            match_details[(s.id, i.id)] = reasons
             x[(s.id, i.id)] = solver.BoolVar(f'x_{s.id}_{i.id}')
 
     # C1: Max 1 internship per student
@@ -101,15 +118,13 @@ def optimize_allocations(data: OptimizationRequest):
     for i in internships:
         solver.Add(sum(x[(s.id, i.id)] for s in students) <= i.capacity)
 
-    # C3: FAIRNESS CONSTRAINT (The "Quota")
-    # "At least X% of ALL matches must be from Reserved Categories"
-    # Logic: Sum(Reserved Matches) >= Quota * Sum(Total Matches)
+    # C3: Quota
+    reserved_students = [s.id for s in students if s.category and s.category.lower() != 'general']
     if reserved_students and quota_percent > 0:
         total_matches = sum(x[(s.id, i.id)] for s in students for i in internships)
         reserved_matches = sum(x[(s.id, i.id)] for s in students if s.id in reserved_students for i in internships)
         solver.Add(reserved_matches >= quota_percent * total_matches)
 
-    # Objective: Maximize Score
     objective = solver.Objective()
     for s in students:
         for i in internships:
@@ -126,10 +141,35 @@ def optimize_allocations(data: OptimizationRequest):
                     results.append({
                         "student_id": s.id,
                         "internship_id": i.id,
-                        "score": costs[(s.id, i.id)]
+                        "score": costs[(s.id, i.id)],
+                        "reasons": match_details[(s.id, i.id)]
                     })
     
     return {
         "status": "Optimal" if status == pywraplp.Solver.OPTIMAL else "Feasible",
         "matches": results
     }
+
+@app.post("/analyze-gap")
+def analyze_skill_gap(data: GapRequest):
+    """
+    Finds which skills are most frequently required by jobs 
+    that the student DOES NOT have.
+    """
+    student_skills = set([s.lower() for s in data.student_skills])
+    missing_counts = {}
+
+    for job in data.internships:
+        job_skills = set([s.lower() for s in job.required_skills])
+        missing = job_skills - student_skills
+        
+        for skill in missing:
+            skill_display = skill.capitalize()
+            missing_counts[skill_display] = missing_counts.get(skill_display, 0) + 1
+            
+    sorted_missing = sorted(missing_counts.items(), key=lambda item: item[1], reverse=True)
+    
+    # Return top 3
+    top_3 = [{"skill": k, "missed_opportunities": v} for k, v in sorted_missing[:3]]
+    
+    return {"gaps": top_3}

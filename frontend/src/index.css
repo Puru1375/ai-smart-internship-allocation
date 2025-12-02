@@ -1,3 +1,4 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
 @import "tailwindcss";
 
 @theme {
@@ -5,7 +6,7 @@
   --color-gov-orange: #FF9933;
   --color-gov-white: #FFFFFF;
   --color-gov-green: #138808;
-  --color-gov-blue: #003366;  /* Deep Navy Blue */
+  --color-gov-blue: #003366;
   --color-gov-light: #f1f1f1;
   --color-gov-accent: #0056b3;
   
@@ -13,12 +14,8 @@
   --font-sans: 'Inter', sans-serif;
 }
 
-/* Import Font */
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
-
-/* Apply Defaults */
 body {
-  background-color: var(--color-gov-light); /* Uses the var defined above */
+  background-color: var(--color-gov-light);
   color: #333;
   font-family: var(--font-sans);
 }

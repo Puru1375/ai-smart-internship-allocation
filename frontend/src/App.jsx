@@ -1,7 +1,7 @@
 // frontend/src/App.jsx
 import React from 'react';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
-import Layout from './components/Layout'; // <--- NEW
+import Layout from './components/Layout'; 
 
 // Pages
 import LandingPage from './pages/LandingPage';
@@ -14,16 +14,18 @@ import AdminDashboard from './pages/AdminDashboard';
 function App() {
   return (
     <Router>
-      <Layout> {/* <--- WRAP EVERYTHING */}
-        <Routes>
-          <Route path="/" element={<LandingPage />} /> {/* New Home */}
-          <Route path="/login" element={<Login />} />
-          <Route path="/signup" element={<Signup />} />
-          <Route path="/student-dashboard" element={<StudentDashboard />} />
-          <Route path="/company-dashboard" element={<CompanyDashboard />} />
-          <Route path="/admin-dashboard" element={<AdminDashboard />} />
-        </Routes>
-      </Layout>
+      <Routes>
+        {/* --- PUBLIC PAGES (Use Top Navbar & Footer) --- */}
+        <Route path="/" element={<Layout><LandingPage /></Layout>} />
+        <Route path="/login" element={<Layout><Login /></Layout>} />
+        <Route path="/signup" element={<Layout><Signup /></Layout>} />
+
+        {/* --- DASHBOARDS (Use Sidebar Layout ONLY) --- */}
+        {/* We do NOT wrap these in <Layout> because they have their own DashboardLayout */}
+        <Route path="/student-dashboard" element={<StudentDashboard />} />
+        <Route path="/company-dashboard" element={<CompanyDashboard />} />
+        <Route path="/admin-dashboard" element={<AdminDashboard />} />
+      </Routes>
     </Router>
   );
 }
